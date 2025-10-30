@@ -1,11 +1,13 @@
-name: CI/CD Build & Push to Docker Hub
+name: CI/CD Pipeline — Docker Hub + Kubernetes + Ansible
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
-  build-and-push:
+  build-test-push:
+    name: Build, Test, and Push Docker Image
     runs-on: ubuntu-latest
 
     steps:
@@ -21,20 +23,50 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pytest
 
       - name: Run tests
         run: |
           python -m pytest -q
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and Push Docker image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: scizor27/try100:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/try100:latest
+
+  deploy:
+    name: Deploy to Kubernetes using Ansible
+    needs: build-test-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Ansible and kubectl
+        run: |
+          sudo apt update -y
+          sudo apt install ansible -y
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+          kubectl version --client
+          ansible --version
+
+      - name: Configure kubeconfig
+        run: |
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > kubeconfig
+          mkdir -p ~/.kube
+          mv kubeconfig ~/.kube/config
+          chmod 600 ~/.kube/config
+          kubectl get nodes
+
+      - name: Run Ansible Playbook for Deployment
+        run: ansible-playbook ansible/deploy_k8s.yml

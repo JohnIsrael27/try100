@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: try100
-          image: ghcr.io/YOUR_GITHUB_USERNAME/try100:latest
+          image: scizor27/try100:latest   # ✅ Docker Hub image
           imagePullPolicy: Always
           ports:
             - containerPort: 5000
