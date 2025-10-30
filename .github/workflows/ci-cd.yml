@@ -1,4 +1,4 @@
-name: CI/CD Pipeline — Docker Hub + Kubernetes + Ansible (Self-Hosted Windows)
+name: CI/CD Pipeline — Docker Hub + Kubernetes + Ansible (Windows + WSL Ubuntu)
 
 on:
   push:
@@ -8,16 +8,15 @@ on:
 jobs:
   build-test-push:
     name: Build, Test, and Push Docker Image
-    runs-on: self-hosted      # your local runner
+    runs-on: self-hosted-windows   # 👈 Windows runner label
     defaults:
       run:
-        shell: powershell        # use PowerShell on Windows
+        shell: powershell
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 🔸 use the Python already installed on your machine
       - name: Verify Python
         run: python --version
 
@@ -44,23 +43,22 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/try100:latest
 
   deploy:
-    name: Deploy to Kubernetes using Ansible
+    name: Deploy to Kubernetes using Ansible (inside Ubuntu)
     needs: build-test-push
-    runs-on: self-hosted
+    runs-on: self-hosted-ubuntu    # 👈 Ubuntu runner label
     defaults:
       run:
-        shell: powershell
+        shell: bash                # 👈 Run Ansible commands natively in Ubuntu
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 🔸 you already have kubectl + ansible configured locally
       - name: Verify tools
         run: |
           kubectl version --client
           ansible --version
           kubectl get nodes
 
-      - name: Run Ansible Playbook for Deployment
-        run: ansible-playbook ansible/deploy_k8s.yml
+      - name: Run Ansible Playbook
+        run: ansible-playbook /mnt/c/Users/John\ Israel/Desktop/try100/ansible/deploy_k8s.yml
