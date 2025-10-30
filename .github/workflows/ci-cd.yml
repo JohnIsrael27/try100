@@ -8,7 +8,7 @@ on:
 jobs:
   build-test-push:
     name: Build, Test, and Push Docker Image
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout repository
@@ -45,7 +45,7 @@ jobs:
   deploy:
     name: Deploy to Kubernetes using Ansible
     needs: build-test-push
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout repository
