@@ -1,4 +1,4 @@
-name: CI/CD Pipeline — Docker Hub + Kubernetes + Ansible
+name: CI/CD Pipeline — Docker Hub + Kubernetes + Ansible (Self-Hosted Windows)
 
 on:
   push:
@@ -8,16 +8,18 @@ on:
 jobs:
   build-test-push:
     name: Build, Test, and Push Docker Image
-    runs-on: self-hosted
+    runs-on: self-hosted      # your local runner
+    defaults:
+      run:
+        shell: pwsh           # use PowerShell on Windows
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+      # 🔸 use the Python already installed on your machine
+      - name: Verify Python
+        run: python --version
 
       - name: Install dependencies
         run: |
@@ -26,8 +28,7 @@ jobs:
           pip install pytest
 
       - name: Run tests
-        run: |
-          python -m pytest -q
+        run: python -m pytest -q
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -46,26 +47,19 @@ jobs:
     name: Deploy to Kubernetes using Ansible
     needs: build-test-push
     runs-on: self-hosted
+    defaults:
+      run:
+        shell: pwsh
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Ansible and kubectl
+      # 🔸 you already have kubectl + ansible configured locally
+      - name: Verify tools
         run: |
-          sudo apt update -y
-          sudo apt install ansible -y
-          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
           kubectl version --client
           ansible --version
-
-      - name: Configure kubeconfig
-        run: |
-          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 --decode > kubeconfig
-          mkdir -p ~/.kube
-          mv kubeconfig ~/.kube/config
-          chmod 600 ~/.kube/config
           kubectl get nodes
 
       - name: Run Ansible Playbook for Deployment
