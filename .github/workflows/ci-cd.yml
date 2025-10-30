@@ -11,7 +11,7 @@ jobs:
     runs-on: self-hosted      # your local runner
     defaults:
       run:
-        shell: pwsh           # use PowerShell on Windows
+        shell: powershell        # use PowerShell on Windows
 
     steps:
       - name: Checkout repository
