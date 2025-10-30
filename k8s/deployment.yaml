@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: try100-deployment
+  labels:
+    app: try100
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: try100
+  template:
+    metadata:
+      labels:
+        app: try100
+    spec:
+      containers:
+        - name: try100
+          image: ghcr.io/YOUR_GITHUB_USERNAME/try100:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
